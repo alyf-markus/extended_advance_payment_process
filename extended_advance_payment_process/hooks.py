@@ -157,9 +157,15 @@ doc_events = {
 	"Sales Invoice": {
 		"validate": "extended_advance_payment_process.sales_order.block_sales_invoice",
 	},
-    "Work Order": {
-	"validate": "extended_advance_payment_process.sales_order.block_work_order",
-    },
+	"Work Order": {
+		"validate": "extended_advance_payment_process.sales_order.block_work_order",
+	},
+	"Subcontracting Order": {
+		"validate": "extended_advance_payment_process.sales_order.block_subcontracting_order",
+	},
+	"Subcontracting Inward Order": {
+		"validate": "extended_advance_payment_process.sales_order.block_subcontracting_inward_order",
+	},
 }
 
 # Scheduled Tasks

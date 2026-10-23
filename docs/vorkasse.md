@@ -16,12 +16,17 @@ Die Zeilen der Tabelle sind der Child-DocType **Extended Advance Payment Process
 
 Der Vergleich gilt, wenn `party_account_currency` und `currency` am **Sales Order** gleich sind. Sonst ist der Auftrag für diese App nicht bezahlt, weil die Beträge in verschiedenen Währungen stehen.
 
-Die Summe ist `rounded_total`, und wenn die Rundung aus ist, `grand_total`. ERPNext steuert das über **Global Defaults**, Feld *Disable Rounded Total* (`disable_rounded_total`), und über dasselbe Feld am Auftrag. Die App hat dafür keine eigene Einstellung.
+Welche Zeilen der Zahlungsplan zählen, entscheidet das **Check**-Feld *Counts for Advance* (`custom_counts_for_advance`) am **Payment Term**. Es ist ein **Custom Field** neben *Mode of Payment*, exportiert in `custom/payment_term.json`. Der Betrag, der da sein muss, ist die Summe von `payment_amount` aller Zeilen in `payment_schedule` des **Sales Order**, deren **Payment Term** das Häkchen hat. So zählen auch mehrere Anzahlungszeilen, zum Beispiel 30 % und 20 %.
+
+Jede Vorlage in *Payment templates used* braucht mindestens einen solchen **Payment Term**. Die Prüfung steht in `validate` von **Extended Advance Payment Process Settings** und lehnt das Speichern sonst ab. Wird das Häkchen später am **Payment Term** entfernt, greift die App nicht ins Leere: Ohne Treffer ist die Summe `rounded_total`, und wenn die Rundung aus ist, `grand_total`. Der Auftrag muss dann ganz bezahlt sein. ERPNext steuert die Rundung über **Global Defaults**, Feld *Disable Rounded Total* (`disable_rounded_total`), und über dasselbe Feld am Auftrag. Die App hat dafür keine eigene Einstellung.
 
 ```python
-total = flt(doc.rounded_total) or flt(doc.grand_total)
+due_now = sum(row.payment_amount for row in doc.payment_schedule if <Payment Term hat custom_counts_for_advance>)
+total = due_now or flt(doc.rounded_total) or flt(doc.grand_total)
 open_amount = total - flt(doc.advance_paid)
 ```
+
+Dieselbe Summe steht im **Currency**-Feld *Payable Advance* (`custom_payable_advance`) am **Sales Order**. Es ist *Read Only* und nur sichtbar, wenn `custom_uses_advance_payment` gesetzt ist. `validate` füllt es über `get_advance_due`. `is_paid` nutzt dieselbe Funktion, damit Anzeige und Prüfung nie auseinanderlaufen.
 
 `open_amount` ist der noch fehlende Betrag. Ist die Anzahlung höher als `total`, wird `open_amount` negativ und der Auftrag gilt als bezahlt.
 
@@ -51,13 +56,13 @@ Der Hook steht in `hooks.py` unter `# Document Events`: **Sales Order**, Ereigni
 
 Bestellen und Liefern sind zwei Freigaben am **Sales Order**. Eine Rolle darf beide setzen. Eine zweite Rolle kommt erst dazu, wenn Einkauf und Versand von verschiedenen Leuten freigegeben werden.
 
-Bestellen umfasst **Material Request**, **Purchase Order** und **Work Order**. Die Ware bleibt bei der Firma. Ein **Production Plan** bleibt frei, Planen und das Bestellen der Rohstoffe darin auch. **Material Request**-Zeilen mit gesetztem `production_plan` überspringt `block_order`. Eine **Material Request** direkt aus dem **Sales Order** bleibt gesperrt.
+Bestellen umfasst **Material Request**, **Purchase Order**, **Work Order** und **Subcontracting Order**. Die **Subcontracting Order** hat kein eigenes Feld für den Auftrag. Die App liest ihn aus den Zeilen der verknüpften **Purchase Order**. Die **Subcontracting Inward Order** (der Kunde liefert das Material) hat das Pflichtfeld `sales_order` und zählt ebenfalls zum Bestellen. Die Ware bleibt bei der Firma. Ein **Production Plan** bleibt frei, Planen und das Bestellen der Rohstoffe darin auch. **Material Request**-Zeilen mit gesetztem `production_plan` überspringt `block_order`. Eine **Material Request** direkt aus dem **Sales Order** bleibt gesperrt.
 
 Liefern umfasst **Delivery Note** und **Sales Invoice** mit *Update Stock* (`update_stock`). Drop-Ship gehört zur Lieferung: eine **Purchase Order** mit *Delivered by Supplier* (`delivered_by_supplier`) schickt die Ware an den Kunden und bleibt gesperrt, solange die Lieferfreigabe fehlt.
 
 Eine **Pick List** bucht kein Lager und erzeugt keine Lieferung. Sie darf deshalb auch ohne Zahlung angelegt werden. Die Auslieferung bleibt am **Delivery Note** gesperrt. Hat der **Sales Order** schon `stock_reserved_qty`, lehnt ERPNext eine **Pick List** mit Zweck "Delivery" ab, bis die Reservierung aufgehoben ist. Das bleibt die Standardprüfung.
 
-Die Rolle steht in **Extended Advance Payment Process Settings** als **Link** *Allow Processing Role* (`allow_processing_role`) auf **Role**. Die Felder am **Sales Order** sind **Custom Field** neben *Advance Paid*. Pro Seite ein **Check**, ein **Link** auf **User** und ein **Datetime**. Alle sechs sind *Read Only* und *Allow on Submit*. Die Freigabe schreibt der Button *Advance Payment* am gebuchten **Sales Order**. Die Methode `set_release` in `sales_order.py` prüft `allow_processing_role` und setzt oder leert Haken, User und Uhrzeit für eine Seite. Das Formular hängt in `public/js/sales_order.js`, eingebunden über `doctype_js` in `hooks.py`.
+Die Rolle steht in **Extended Advance Payment Process Settings** als **Link** *Allow Processing Role* (`allow_processing_role`) auf **Role**. Die Felder am **Sales Order** sind **Custom Field** neben *Advance Paid*. Pro Seite ein **Check**, ein **Link** auf **User** und ein **Datetime**. Alle sechs sind *Read Only* und *Allow on Submit*. Die Freigabe schreibt der Button *Advance Payment* am gebuchten **Sales Order**. Die Methode `set_release` in `sales_order.py` prüft `allow_processing_role` und das Schreibrecht am **Sales Order**. Beides ist nötig, weil die Methode auch direkt aufrufbar ist und `db_set` keine Rechte prüft. Danach setzt oder leert Haken, User und Uhrzeit für eine Seite. Das Formular hängt in `public/js/sales_order.js`, eingebunden über `doctype_js` in `hooks.py`.
 
 Exportiert sind sie über **Customize Form**, Aktion *Export Customizations*, Modul **Extended Advance Payment Process**, *Sync on Migrate* an. Die Datei ist `extended_advance_payment_process/custom/sales_order.json`. Beim `bench migrate` legt Frappe die Felder daraus an.
 

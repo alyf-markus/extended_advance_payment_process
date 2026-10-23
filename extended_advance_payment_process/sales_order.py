@@ -2,29 +2,37 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, now_datetime
 
+
 def validate(doc, method=None):
 	settings = frappe.get_single("Extended Advance Payment Process Settings")
 	selected = [row.payment_term_templates for row in settings.templates_used]
 	doc.custom_uses_advance_payment = 1 if doc.payment_terms_template in selected else 0
 	if not doc.custom_uses_advance_payment:
 		return
+	doc.custom_payable_advance = get_advance_due(doc)
 	set_reserve_stock(doc, settings)
-    
+
+
 def set_reserve_stock(doc, settings):
 	if not frappe.db.get_single_value("Stock Settings", "enable_stock_reservation"):
 		return
 	doc.reserve_stock = 1 if settings.allow_reservation else 0
 
-def is_paid(doc, settings):
-	if doc.party_account_currency != doc.currency:
-		return False
+
+def get_advance_due(doc):
 	due_now = sum(
 		flt(row.payment_amount)
 		for row in doc.payment_schedule
-		if row.due_date_based_on == "Day(s) after invoice date" and cint(row.credit_days) == 0
+		if row.payment_term
+		and frappe.db.get_value("Payment Term", row.payment_term, "custom_counts_for_advance")
 	)
-	total = due_now or flt(doc.rounded_total) or flt(doc.grand_total)
-	open_amount = total - flt(doc.advance_paid)
+	return due_now or flt(doc.rounded_total) or flt(doc.grand_total)
+
+
+def is_paid(doc, settings):
+	if doc.party_account_currency != doc.currency:
+		return False
+	open_amount = get_advance_due(doc) - flt(doc.advance_paid)
 	tolerance = flt(settings.payment_tolerance) if settings.allow_tolerance else 0
 	return open_amount <= tolerance
 
@@ -39,6 +47,7 @@ def set_release(name, side, release):
 		frappe.throw(_("You are not allowed to release this order."))
 
 	doc = frappe.get_doc("Sales Order", name)
+	doc.check_permission("write")
 	if doc.docstatus != 1 or not doc.custom_uses_advance_payment:
 		return
 
@@ -97,6 +106,22 @@ def block_sales_invoice(doc, method=None):
 	for sales_order in {row.sales_order for row in doc.items if row.sales_order}:
 		require_release(sales_order, "delivery")
 
+
 def block_work_order(doc, method=None):
 	if doc.sales_order:
 		require_release(doc.sales_order, "order")
+
+
+def block_subcontracting_order(doc, method=None):
+	sales_orders = frappe.get_all(
+		"Purchase Order Item",
+		filters={"parent": doc.purchase_order, "sales_order": ["is", "set"]},
+		pluck="sales_order",
+		distinct=True,
+	)
+	for sales_order in sales_orders:
+		require_release(sales_order, "order")
+
+
+def block_subcontracting_inward_order(doc, method=None):
+	require_release(doc.sales_order, "order")
