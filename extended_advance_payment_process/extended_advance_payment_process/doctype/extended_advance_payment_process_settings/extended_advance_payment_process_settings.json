@@ -42,7 +42,7 @@
   {
    "fieldname": "allow_processing_role",
    "fieldtype": "Link",
-   "label": "Allow Processing Role",
+   "label": "Role to allow Processing of blocked Sales Orders",
    "options": "Role"
   },
   {
@@ -55,7 +55,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-23 17:44:16.501377",
+ "modified": "2026-10-23 18:55:52.293988",
  "modified_by": "Administrator",
  "module": "Extended Advance Payment Process",
  "name": "Extended Advance Payment Process Settings",

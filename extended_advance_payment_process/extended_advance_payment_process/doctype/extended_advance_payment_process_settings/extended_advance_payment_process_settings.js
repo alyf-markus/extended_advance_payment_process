@@ -40,7 +40,7 @@ function render_advance_templates(frm, templates) {
 
 	frm.fields_dict.advance_templates_html.$wrapper.html(
 		`<p class="text-muted">${__(
-			"Sales Orders whose payment schedule contains one of these Payment Terms use the advance payment process."
+			"A Sales Order is blocked until the advance is paid if one of its payment terms has 'Counts for Advance' checked. These templates contain such a term:"
 		)}</p>
 		<table class="table table-bordered">
 			<thead><tr><th>${__("Payment Terms Template")}</th><th>${__(
