@@ -4,11 +4,15 @@ Beschlüsse für die App **Extended Advance Payment Process**. Stand der Umsetzu
 
 ## Welche Aufträge
 
-Die App prüft am **Sales Order** das Feld `payment_terms_template`. Steht der Wert in **Extended Advance Payment Process Settings**, Tabelle *Payment templates used* (`templates_used`), gilt das Vorkasse-Verhalten. Andere Vorlagen und Aufträge ohne Vorlage bleiben unberührt.
+Ob ein **Sales Order** ein Vorkasse-Auftrag ist, entscheidet sein Zahlungsplan. Das **Check**-Feld *Counts for Advance* (`custom_counts_for_advance`) am **Payment Term** markiert Anzahlungs-Terms. Es ist ein **Custom Field** neben *Mode of Payment*, exportiert in `custom/payment_term.json`. Hat eine Zeile in `payment_schedule` einen markierten **Payment Term**, gilt das Vorkasse-Verhalten. Aufträge ohne markierte Zeile bleiben unberührt.
 
-Die Vorlage setzt der User am **Customer** oder am **Sales Order**. Die App vergibt sie nicht.
+Es gibt keine zweite Liste von Vorlagen in den Settings. Das Häkchen am **Payment Term** ist die einzige Stelle. Wer einen Anzahlungs-Term ohne Sperre will, legt einen zweiten **Payment Term** ohne Häkchen an.
 
-Die Zeilen der Tabelle sind der Child-DocType **Extended Advance Payment Process Terms**. Das Link-Feld *Payment Term Templates* (`payment_term_templates`) zeigt auf **Payment Terms Template**. Ein Feld vom Typ **Table** kann nicht direkt auf **Payment Terms Template** zeigen, weil das kein Child-DocType ist.
+Die Vorlage setzt der User am **Customer** oder am **Sales Order**. Die App vergibt sie nicht. Ändert der User den Zahlungsplan am Auftrag von Hand, zählt der Zahlungsplan, nicht die Vorlage.
+
+**Extended Advance Payment Process Settings** zeigt im **HTML**-Feld *Advance payment templates* (`advance_templates_html`) alle **Payment Terms Template**, die einen markierten Term enthalten. Die Anzeige berechnet `get_advance_templates` bei jedem Öffnen. Sie speichert nichts.
+
+`validate` am **Sales Order** setzt `custom_uses_advance_payment` und *Payable Advance* (`custom_payable_advance`). Beides passiert nur vor dem Buchen. Wird das Häkchen an einem **Payment Term** später gesetzt oder entfernt, ändert das gebuchte Aufträge nicht.
 
 ## Wann der Auftrag bezahlt ist
 
@@ -16,19 +20,16 @@ Die Zeilen der Tabelle sind der Child-DocType **Extended Advance Payment Process
 
 Der Vergleich gilt, wenn `party_account_currency` und `currency` am **Sales Order** gleich sind. Sonst ist der Auftrag für diese App nicht bezahlt, weil die Beträge in verschiedenen Währungen stehen.
 
-Welche Zeilen der Zahlungsplan zählen, entscheidet das **Check**-Feld *Counts for Advance* (`custom_counts_for_advance`) am **Payment Term**. Es ist ein **Custom Field** neben *Mode of Payment*, exportiert in `custom/payment_term.json`. Der Betrag, der da sein muss, ist die Summe von `payment_amount` aller Zeilen in `payment_schedule` des **Sales Order**, deren **Payment Term** das Häkchen hat. So zählen auch mehrere Anzahlungszeilen, zum Beispiel 30 % und 20 %.
-
-Jede Vorlage in *Payment templates used* braucht mindestens einen solchen **Payment Term**. Die Prüfung steht in `validate` von **Extended Advance Payment Process Settings** und lehnt das Speichern sonst ab. Wird das Häkchen später am **Payment Term** entfernt, greift die App nicht ins Leere: Ohne Treffer ist die Summe `rounded_total`, und wenn die Rundung aus ist, `grand_total`. Der Auftrag muss dann ganz bezahlt sein. ERPNext steuert die Rundung über **Global Defaults**, Feld *Disable Rounded Total* (`disable_rounded_total`), und über dasselbe Feld am Auftrag. Die App hat dafür keine eigene Einstellung.
+Der Betrag, der da sein muss, ist die Summe von `payment_amount` aller Zeilen in `payment_schedule`, deren **Payment Term** das Häkchen hat. So zählen auch mehrere Anzahlungszeilen, zum Beispiel 30 % und 20 %. Volle Vorkasse ist ein markierter Term mit 100 %.
 
 ```python
 due_now = sum(row.payment_amount for row in doc.payment_schedule if <Payment Term hat custom_counts_for_advance>)
-total = due_now or flt(doc.rounded_total) or flt(doc.grand_total)
-open_amount = total - flt(doc.advance_paid)
+open_amount = due_now - flt(doc.advance_paid)
 ```
 
 Dieselbe Summe steht im **Currency**-Feld *Payable Advance* (`custom_payable_advance`) am **Sales Order**. Es ist *Read Only* und nur sichtbar, wenn `custom_uses_advance_payment` gesetzt ist. `validate` füllt es über `get_advance_due`. `is_paid` nutzt dieselbe Funktion, damit Anzeige und Prüfung nie auseinanderlaufen.
 
-`open_amount` ist der noch fehlende Betrag. Ist die Anzahlung höher als `total`, wird `open_amount` negativ und der Auftrag gilt als bezahlt.
+`open_amount` ist der noch fehlende Betrag. Ist die Anzahlung höher als `due_now`, wird `open_amount` negativ und der Auftrag gilt als bezahlt.
 
 Die Toleranz liegt in **Extended Advance Payment Process Settings**:
 
@@ -48,7 +49,7 @@ Die Funktion `is_paid` in `sales_order.py` bildet das ab. `require_release` ruft
 
 Reservieren schaltet der System Manager in **Stock Settings**, Feld *Enable Stock Reservation* (`enable_stock_reservation`). Die App schaltet das nicht ein und setzt auch nicht *Auto Reserve Stock* (`auto_reserve_stock`). Das würde jeden **Sales Order**, **Work Order** und **Production Plan** reservieren. *Allow Negative Stock* und die Reservierung können in ERPNext nicht gleichzeitig an sein.
 
-*Allow reservation for not paid* (`allow_reservation`) gilt nur für Aufträge aus der Vorlagen-Tabelle, und nur wenn `enable_stock_reservation` an ist. Dann setzt die App am **Sales Order** das vorhandene Feld `reserve_stock`. ERPNext legt daraus die **Stock Reservation Entry** an. Ist die Reservierung im System aus, lässt die App `reserve_stock` unverändert.
+*Allow reservation for not paid* (`allow_reservation`) gilt nur für Vorkasse-Aufträge, und nur wenn `enable_stock_reservation` an ist. Dann setzt die App am **Sales Order** das vorhandene Feld `reserve_stock`. ERPNext legt daraus die **Stock Reservation Entry** an. Ist die Reservierung im System aus, lässt die App `reserve_stock` unverändert.
 
 Der Hook steht in `hooks.py` unter `# Document Events`: **Sales Order**, Ereignis `validate`, Funktion `validate`. Die setzt `custom_uses_advance_payment` und ruft danach `set_reserve_stock` auf. Ist die Reservierung im System aus, bleibt die Freigabe trotzdem möglich. Der Hook läuft nach `enable_auto_reserve_stock` in ERPNext.
 

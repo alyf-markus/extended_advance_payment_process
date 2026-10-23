@@ -4,12 +4,11 @@ from frappe.utils import cint, flt, now_datetime
 
 
 def validate(doc, method=None):
-	settings = frappe.get_single("Extended Advance Payment Process Settings")
-	selected = [row.payment_term_templates for row in settings.templates_used]
-	doc.custom_uses_advance_payment = 1 if doc.payment_terms_template in selected else 0
+	doc.custom_payable_advance = get_advance_due(doc)
+	doc.custom_uses_advance_payment = 1 if doc.custom_payable_advance else 0
 	if not doc.custom_uses_advance_payment:
 		return
-	doc.custom_payable_advance = get_advance_due(doc)
+	settings = frappe.get_single("Extended Advance Payment Process Settings")
 	set_reserve_stock(doc, settings)
 
 
@@ -20,13 +19,12 @@ def set_reserve_stock(doc, settings):
 
 
 def get_advance_due(doc):
-	due_now = sum(
+	return sum(
 		flt(row.payment_amount)
 		for row in doc.payment_schedule
 		if row.payment_term
 		and frappe.db.get_value("Payment Term", row.payment_term, "custom_counts_for_advance")
 	)
-	return due_now or flt(doc.rounded_total) or flt(doc.grand_total)
 
 
 def is_paid(doc, settings):
@@ -63,6 +61,7 @@ def set_release(name, side, release):
 		notify=True,
 	)
 
+
 def require_release(sales_order_name, side):
 	sales_order = frappe.get_doc("Sales Order", sales_order_name)
 	if not sales_order.custom_uses_advance_payment:
@@ -75,9 +74,9 @@ def require_release(sales_order_name, side):
 	released = sales_order.custom_order_released if side == "order" else sales_order.custom_delivery_released
 	if not released:
 		frappe.throw(
-			_("The advance payment was not received. No further processing is allowed. Sales Order {0}.").format(
-				sales_order_name
-			),
+			_(
+				"The advance payment was not received. No further processing is allowed. Sales Order {0}."
+			).format(sales_order_name),
 			title=_("Advance Payment"),
 		)
 

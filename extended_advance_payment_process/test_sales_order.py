@@ -12,24 +12,29 @@ from extended_advance_payment_process.sales_order import (
 	get_advance_due,
 	is_paid,
 	set_release,
+	validate,
 )
+
+
+def make_payment_terms():
+	if not frappe.db.exists("Payment Term", "EAPP Advance"):
+		frappe.get_doc(
+			{
+				"doctype": "Payment Term",
+				"payment_term_name": "EAPP Advance",
+				"invoice_portion": 30,
+				"custom_counts_for_advance": 1,
+			}
+		).insert()
+	if not frappe.db.exists("Payment Term", "EAPP Rest"):
+		frappe.get_doc(
+			{"doctype": "Payment Term", "payment_term_name": "EAPP Rest", "invoice_portion": 70}
+		).insert()
 
 
 class IntegrationTestIsPaid(IntegrationTestCase):
 	def setUp(self):
-		if not frappe.db.exists("Payment Term", "EAPP Advance"):
-			frappe.get_doc(
-				{
-					"doctype": "Payment Term",
-					"payment_term_name": "EAPP Advance",
-					"invoice_portion": 30,
-					"custom_counts_for_advance": 1,
-				}
-			).insert()
-		if not frappe.db.exists("Payment Term", "EAPP Rest"):
-			frappe.get_doc(
-				{"doctype": "Payment Term", "payment_term_name": "EAPP Rest", "invoice_portion": 70}
-			).insert()
+		make_payment_terms()
 		self.settings = frappe._dict(allow_tolerance=1, payment_tolerance=0.02)
 
 	def order(self, advance_paid, **kwargs):
@@ -59,10 +64,17 @@ class IntegrationTestIsPaid(IntegrationTestCase):
 		self.settings.allow_tolerance = 0
 		self.assertFalse(is_paid(self.order(29.98), self.settings))
 
-	def test_no_flagged_row_needs_full_total(self):
-		schedule = [frappe._dict(payment_term="EAPP Rest", payment_amount=100)]
-		self.assertFalse(is_paid(self.order(30, payment_schedule=schedule), self.settings))
-		self.assertTrue(is_paid(self.order(100, payment_schedule=schedule), self.settings))
+	def test_flagged_row_marks_order_as_advance_payment(self):
+		order = self.order(0)
+		validate(order)
+		self.assertEqual(order.custom_payable_advance, 30)
+		self.assertEqual(order.custom_uses_advance_payment, 1)
+
+	def test_no_flagged_row_is_no_advance_payment(self):
+		order = self.order(0, payment_schedule=[frappe._dict(payment_term="EAPP Rest", payment_amount=100)])
+		validate(order)
+		self.assertEqual(order.custom_payable_advance, 0)
+		self.assertEqual(order.custom_uses_advance_payment, 0)
 
 	def test_currency_mismatch_is_not_paid(self):
 		self.assertFalse(is_paid(self.order(100, party_account_currency="USD"), self.settings))
@@ -71,17 +83,23 @@ class IntegrationTestIsPaid(IntegrationTestCase):
 class IntegrationTestBlockers(IntegrationTestCase):
 	"""The Sales Order is replaced at the frappe.get_doc boundary."""
 
+	def setUp(self):
+		make_payment_terms()
+
 	def sales_order(self, paid=False, order_released=0, delivery_released=0):
 		return frappe._dict(
 			custom_uses_advance_payment=1,
 			custom_order_released=order_released,
 			custom_delivery_released=delivery_released,
-			payment_schedule=[],
+			payment_schedule=[
+				frappe._dict(payment_term="EAPP Advance", payment_amount=30),
+				frappe._dict(payment_term="EAPP Rest", payment_amount=70),
+			],
 			party_account_currency="EUR",
 			currency="EUR",
 			rounded_total=100,
 			grand_total=100,
-			advance_paid=100 if paid else 0,
+			advance_paid=30 if paid else 0,
 		)
 
 	def run_with(self, sales_order, function, doc):
