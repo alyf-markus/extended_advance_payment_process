@@ -1,9 +1,11 @@
-app_name = "advanced_payment_process"
-app_title = "Advanced Payment Process"
+app_name = "extended_advance_payment_process"
+app_title = "Extended Advance Payment Process"
 app_publisher = "Markus"
 app_description = "Vorkasse: Lieferung und Beschaffung bleiben gesperrt, bis die Anzahlung da ist."
 app_email = "313874067+alyf-markus@users.noreply.github.com"
 app_license = "mit"
+
+
 
 # Apps
 # ------------------
@@ -13,11 +15,11 @@ app_license = "mit"
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
-# 		"name": "advanced_payment_process",
-# 		"logo": "/assets/advanced_payment_process/logo.png",
-# 		"title": "Advanced Payment Process",
-# 		"route": "/advanced_payment_process",
-# 		"has_permission": "advanced_payment_process.api.permission.has_app_permission"
+# 		"name": "extended_advance_payment_process",
+# 		"logo": "/assets/extended_advance_payment_process/logo.png",
+# 		"title": "Extended Advance Payment Process",
+# 		"route": "/extended_advance_payment_process",
+# 		"has_permission": "extended_advance_payment_process.api.permission.has_app_permission"
 # 	}
 # ]
 
@@ -25,15 +27,15 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/advanced_payment_process/css/advanced_payment_process.css"
-# app_include_js = "/assets/advanced_payment_process/js/advanced_payment_process.js"
+# app_include_css = "/assets/extended_advance_payment_process/css/extended_advance_payment_process.css"
+# app_include_js = "/assets/extended_advance_payment_process/js/extended_advance_payment_process.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/advanced_payment_process/css/advanced_payment_process.css"
-# web_include_js = "/assets/advanced_payment_process/js/advanced_payment_process.js"
+# web_include_css = "/assets/extended_advance_payment_process/css/extended_advance_payment_process.css"
+# web_include_js = "/assets/extended_advance_payment_process/js/extended_advance_payment_process.js"
 
 # include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "advanced_payment_process/public/scss/website"
+# website_theme_scss = "extended_advance_payment_process/public/scss/website"
 
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
@@ -44,6 +46,7 @@ app_license = "mit"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -51,7 +54,7 @@ app_license = "mit"
 # Svg Icons
 # ------------------
 # include app icons in desk
-# app_include_icons = "advanced_payment_process/public/icons.svg"
+# app_include_icons = "extended_advance_payment_process/public/icons.svg"
 
 # Home Pages
 # ----------
@@ -78,49 +81,49 @@ app_license = "mit"
 
 # add methods and filters to jinja environment
 # jinja = {
-# 	"methods": "advanced_payment_process.utils.jinja_methods",
-# 	"filters": "advanced_payment_process.utils.jinja_filters"
+# 	"methods": "extended_advance_payment_process.utils.jinja_methods",
+# 	"filters": "extended_advance_payment_process.utils.jinja_filters"
 # }
 
 # Installation
 # ------------
 
-# before_install = "advanced_payment_process.install.before_install"
-# after_install = "advanced_payment_process.install.after_install"
+# before_install = "extended_advance_payment_process.install.before_install"
+# after_install = "extended_advance_payment_process.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "advanced_payment_process.uninstall.before_uninstall"
-# after_uninstall = "advanced_payment_process.uninstall.after_uninstall"
+# before_uninstall = "extended_advance_payment_process.uninstall.before_uninstall"
+# after_uninstall = "extended_advance_payment_process.uninstall.after_uninstall"
 
 # Integration Setup
 # ------------------
 # To set up dependencies/integrations with other apps
 # Name of the app being installed is passed as an argument
 
-# before_app_install = "advanced_payment_process.utils.before_app_install"
-# after_app_install = "advanced_payment_process.utils.after_app_install"
+# before_app_install = "extended_advance_payment_process.utils.before_app_install"
+# after_app_install = "extended_advance_payment_process.utils.after_app_install"
 
 # Integration Cleanup
 # -------------------
 # To clean up dependencies/integrations with other apps
 # Name of the app being uninstalled is passed as an argument
 
-# before_app_uninstall = "advanced_payment_process.utils.before_app_uninstall"
-# after_app_uninstall = "advanced_payment_process.utils.after_app_uninstall"
+# before_app_uninstall = "extended_advance_payment_process.utils.before_app_uninstall"
+# after_app_uninstall = "extended_advance_payment_process.utils.after_app_uninstall"
 
 # Build
 # ------------------
 # To hook into the build process
 
-# after_build = "advanced_payment_process.build.after_build"
+# after_build = "extended_advance_payment_process.build.after_build"
 
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "advanced_payment_process.notifications.get_notification_config"
+# notification_config = "extended_advance_payment_process.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -138,60 +141,73 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Order": {
+		"validate": "extended_advance_payment_process.sales_order.validate",
+	},
+	"Material Request": {
+		"validate": "extended_advance_payment_process.sales_order.block_order",
+	},
+	"Purchase Order": {
+		"validate": "extended_advance_payment_process.sales_order.block_purchase_order",
+	},
+	"Delivery Note": {
+		"validate": "extended_advance_payment_process.sales_order.block_delivery",
+	},
+	"Sales Invoice": {
+		"validate": "extended_advance_payment_process.sales_order.block_sales_invoice",
+	},
+    "Work Order": {
+	"validate": "extended_advance_payment_process.sales_order.block_work_order",
+    },
+}
 
 # Scheduled Tasks
 # ---------------
 
 # scheduler_events = {
 # 	"all": [
-# 		"advanced_payment_process.tasks.all"
+# 		"extended_advance_payment_process.tasks.all"
 # 	],
 # 	"daily": [
-# 		"advanced_payment_process.tasks.daily"
+# 		"extended_advance_payment_process.tasks.daily"
 # 	],
 # 	"hourly": [
-# 		"advanced_payment_process.tasks.hourly"
+# 		"extended_advance_payment_process.tasks.hourly"
 # 	],
 # 	"weekly": [
-# 		"advanced_payment_process.tasks.weekly"
+# 		"extended_advance_payment_process.tasks.weekly"
 # 	],
 # 	"monthly": [
-# 		"advanced_payment_process.tasks.monthly"
+# 		"extended_advance_payment_process.tasks.monthly"
 # 	],
 # }
 
 # Testing
 # -------
 
-# before_tests = "advanced_payment_process.install.before_tests"
+# before_tests = "extended_advance_payment_process.install.before_tests"
 
 # Extend DocType Class
 # ------------------------------
 #
 # Specify custom mixins to extend the standard doctype controller.
 # extend_doctype_class = {
-# 	"Task": "advanced_payment_process.custom.task.CustomTaskMixin"
+# 	"Task": "extended_advance_payment_process.custom.task.CustomTaskMixin"
 # }
 
 # Overriding Methods
 # ------------------------------
 #
 # override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "advanced_payment_process.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events": "extended_advance_payment_process.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-# 	"Task": "advanced_payment_process.task.get_dashboard_data"
+# 	"Task": "extended_advance_payment_process.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -205,13 +221,13 @@ app_license = "mit"
 
 # Request Events
 # ----------------
-# before_request = ["advanced_payment_process.utils.before_request"]
-# after_request = ["advanced_payment_process.utils.after_request"]
+# before_request = ["extended_advance_payment_process.utils.before_request"]
+# after_request = ["extended_advance_payment_process.utils.after_request"]
 
 # Job Events
 # ----------
-# before_job = ["advanced_payment_process.utils.before_job"]
-# after_job = ["advanced_payment_process.utils.after_job"]
+# before_job = ["extended_advance_payment_process.utils.before_job"]
+# after_job = ["extended_advance_payment_process.utils.after_job"]
 
 # User Data Protection
 # --------------------
@@ -241,7 +257,7 @@ app_license = "mit"
 # --------------------------------
 
 # auth_hooks = [
-# 	"advanced_payment_process.auth.validate"
+# 	"extended_advance_payment_process.auth.validate"
 # ]
 
 # Automatically update python controller files with type annotations for this app.

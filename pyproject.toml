@@ -1,5 +1,5 @@
 [project]
-name = "advanced_payment_process"
+name = "extended_advance_payment_process"
 authors = [
     { name = "Markus", email = "313874067+alyf-markus@users.noreply.github.com"}
 ]

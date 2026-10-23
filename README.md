@@ -1,6 +1,8 @@
-### Advanced Payment Process
+### Extended Advance Payment Process
 
 Vorkasse: Lieferung und Beschaffung bleiben gesperrt, bis die Anzahlung da ist.
+
+Beschlüsse und weiterer Ausbau: [docs/vorkasse.md](docs/vorkasse.md).
 
 ### Installation
 
@@ -9,7 +11,7 @@ You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 ```bash
 cd $PATH_TO_YOUR_BENCH
 bench get-app $URL_OF_THIS_REPO --branch version-16
-bench install-app advanced_payment_process
+bench install-app extended_advance_payment_process
 ```
 
 ### Contributing
@@ -17,7 +19,7 @@ bench install-app advanced_payment_process
 This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
 
 ```bash
-cd apps/advanced_payment_process
+cd apps/extended_advance_payment_process
 pre-commit install
 ```
 
