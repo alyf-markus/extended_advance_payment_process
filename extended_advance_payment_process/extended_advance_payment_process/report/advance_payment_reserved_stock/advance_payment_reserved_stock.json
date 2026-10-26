@@ -1,0 +1,40 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2026-10-26 12:29:54.903841",
+ "disable_prepared_report_automation": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "doctype_to_sync": [],
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": null,
+ "modified": "2026-10-26 12:29:54.903841",
+ "modified_by": "Administrator",
+ "module": "Extended Advance Payment Process",
+ "name": "Advance Payment Reserved Stock",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Stock Reservation Entry",
+ "report_name": "Advance Payment Reserved Stock",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Sales Manager"
+  }
+ ],
+ "snapshot_report": 0,
+ "timeout": 0
+}

@@ -2,7 +2,7 @@
 
 Vorkasse: Lieferung und Beschaffung bleiben gesperrt, bis die Anzahlung da ist.
 
-Beschlüsse und weiterer Ausbau: [docs/vorkasse.md](docs/vorkasse.md).
+Beschlüsse und weiterer Ausbau: [docs/vorkasse.md](docs/vorkasse.md). English: [docs/advance_payment.md](docs/advance_payment.md).
 
 ### Installation
 

@@ -124,3 +124,11 @@ def block_subcontracting_order(doc, method=None):
 
 def block_subcontracting_inward_order(doc, method=None):
 	require_release(doc.sales_order, "order")
+
+
+def block_stock_reservation(doc, method=None):
+	if doc.voucher_type != "Sales Order":
+		return
+	if frappe.db.get_single_value("Extended Advance Payment Process Settings", "allow_reservation"):
+		return
+	require_release(doc.voucher_no, "delivery")

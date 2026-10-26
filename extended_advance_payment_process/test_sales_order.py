@@ -7,6 +7,7 @@ from frappe.tests import IntegrationTestCase
 from extended_advance_payment_process.sales_order import (
 	block_delivery,
 	block_purchase_order,
+	block_stock_reservation,
 	block_subcontracting_inward_order,
 	block_subcontracting_order,
 	get_advance_due,
@@ -147,6 +148,17 @@ class IntegrationTestBlockers(IntegrationTestCase):
 		doc = frappe._dict(sales_order="SO-1")
 		with self.assertRaises(frappe.ValidationError):
 			self.run_with(self.sales_order(), block_subcontracting_inward_order, doc)
+
+	def test_stock_reservation_needs_payment_unless_allowed(self):
+		doc = frappe._dict(voucher_type="Sales Order", voucher_no="SO-1")
+		frappe.db.set_single_value("Extended Advance Payment Process Settings", "allow_reservation", 0)
+		with self.assertRaises(frappe.ValidationError):
+			self.run_with(self.sales_order(), block_stock_reservation, doc)
+		self.run_with(self.sales_order(paid=True), block_stock_reservation, doc)
+		self.run_with(self.sales_order(delivery_released=1), block_stock_reservation, doc)
+
+		frappe.db.set_single_value("Extended Advance Payment Process Settings", "allow_reservation", 1)
+		self.run_with(self.sales_order(), block_stock_reservation, doc)
 
 	def test_release_needs_the_processing_role(self):
 		with patch.object(frappe, "get_roles", return_value=["Guest"]):

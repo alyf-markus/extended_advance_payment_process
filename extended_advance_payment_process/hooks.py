@@ -165,6 +165,9 @@ doc_events = {
 	"Subcontracting Inward Order": {
 		"validate": "extended_advance_payment_process.sales_order.block_subcontracting_inward_order",
 	},
+	"Stock Reservation Entry": {
+		"validate": "extended_advance_payment_process.sales_order.block_stock_reservation",
+	},
 }
 
 # Scheduled Tasks

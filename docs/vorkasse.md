@@ -1,6 +1,6 @@
 # Vorkasse
 
-Beschlüsse für die App **Extended Advance Payment Process**. Stand der Umsetzung unten. ERPNext bleibt für Konten, Bank, **Mode of Payment** und dafür zuständig, welche Kunden eine Vorkasse-Vorlage bekommen.
+Beschlüsse für die App **Extended Advance Payment Process**. Stand der Umsetzung unten. Englische Fassung: [advance_payment.md](advance_payment.md). ERPNext bleibt für Konten, Bank, **Mode of Payment** und dafür zuständig, welche Kunden eine Vorkasse-Vorlage bekommen.
 
 ## Welche Aufträge
 
@@ -36,7 +36,7 @@ Die Toleranz liegt in **Extended Advance Payment Process Settings**:
 - **Check** *Allow payment tolerance* (`allow_tolerance`)
 - **Currency** *Payment tolerance* (`payment_tolerance`), sichtbar nur wenn der Schalter an ist (`depends_on`: `allow_tolerance`). Standard `0.02` mit Punkt.
 
-Ist der Schalter an, darf `open_amount` höchstens `payment_tolerance` sein. Ist er aus, muss `advance_paid` das Total erreichen. Die Toleranz begrenzt nur, wie weit die Zahlung unter dem Total liegen darf.
+Ist der Schalter an, darf `open_amount` höchstens `payment_tolerance` sein. Ist er aus, muss `advance_paid` den fälligen Betrag `due_now` erreichen. Die Toleranz begrenzt nur, wie weit die Zahlung darunter liegen darf.
 
 ```python
 tolerance = flt(settings.payment_tolerance) if settings.allow_tolerance else 0
@@ -52,6 +52,8 @@ Reservieren schaltet der System Manager in **Stock Settings**, Feld *Enable Stoc
 *Allow reservation for not paid* (`allow_reservation`) gilt nur für Vorkasse-Aufträge, und nur wenn `enable_stock_reservation` an ist. Dann setzt die App am **Sales Order** das vorhandene Feld `reserve_stock`. ERPNext legt daraus die **Stock Reservation Entry** an. Ist die Reservierung im System aus, lässt die App `reserve_stock` unverändert.
 
 Der Hook steht in `hooks.py` unter `# Document Events`: **Sales Order**, Ereignis `validate`, Funktion `validate`. Die setzt `custom_uses_advance_payment` und ruft danach `set_reserve_stock` auf. Ist die Reservierung im System aus, bleibt die Freigabe trotzdem möglich. Der Hook läuft nach `enable_auto_reserve_stock` in ERPNext.
+
+`reserve_stock` am **Sales Order** steuert nur die Reservierung beim Buchen. Die Zeilen (**Sales Order Item**, Feld `reserve_stock`, Standard an, *Allow on Submit*) lässt die App unverändert. Deshalb zeigt der gebuchte Auftrag weiter den Button *Stock Reservation* > *Reserve*. Ist `allow_reservation` aus, sperrt `block_stock_reservation` jede **Stock Reservation Entry** zu einem Vorkasse-Auftrag, bis er bezahlt ist oder die Lieferfreigabe hat. Reservieren zählt als Liefern, weil die Ware dann für den Kunden zurückliegt. Nach der Zahlung reserviert der User über denselben Button.
 
 ## Freigabe
 
@@ -76,8 +78,24 @@ Der Status "On Hold" am **Sales Order** ist dafür nicht geeignet. Er blockiert 
 
 ## Liegedauer
 
-Ein Bericht zeigt, wie lange reservierte Ware für diese Aufträge liegt. Er hat nur Zeilen, wenn `allow_reservation` an ist und ERPNext tatsächlich eine **Stock Reservation Entry** erzeugt hat. Der Standardbericht **Reserved Stock** hat einen Erstellzeitpunkt, aber kein Alter in Tagen und keinen Filter auf unbezahlte Vorkasse-Aufträge.
+Der Script Report **Advance Payment Reserved Stock** zeigt, welche Ware für Vorkasse-Aufträge reserviert ist und wie lange schon. Er liegt im Modul **Extended Advance Payment Process** und hängt an **Stock Reservation Entry**. Öffnen dürfen ihn "Stock User", "Stock Manager", "Sales User" und "Sales Manager".
 
-## Noch nicht gebaut
+Eine Zeile ist eine offene **Stock Reservation Entry** zu einem gebuchten **Sales Order** mit `custom_uses_advance_payment`. Offen heißt Status "Reserved", "Partially Reserved", "Partially Delivered" oder "Partially Used". Die älteste Reservierung steht oben.
 
-- Liegedauer-Bericht. Er hat nur Zeilen, wenn `allow_reservation` an ist und ERPNext eine **Stock Reservation Entry** erzeugt hat.
+| Spalte | Bedeutung |
+|---|---|
+| *Sales Order*, *Customer* | Der Vorkasse-Auftrag |
+| *Item*, *Warehouse* | Was wo reserviert ist |
+| *Reserved Qty* | Noch reserviert: `reserved_qty` minus `delivered_qty` der Reservierung |
+| *Reserved Since* | Erstellzeitpunkt der **Stock Reservation Entry** |
+| *Days Reserved* | Tage seit *Reserved Since* bis heute |
+| *Qty in Stock* | Lagerbestand des Artikels in diesem Lager (`actual_qty` aus **Bin**) |
+| *Qty on Open Sales Orders* | Menge des Artikels auf allen offenen **Sales Order** für dieses Lager (`reserved_qty` aus **Bin**), nicht nur Vorkasse |
+| *Payable Advance*, *Advance Paid*, *Paid* | Fälliger Betrag, eingegangenes Geld und ob `is_paid` den Auftrag als bezahlt sieht |
+| *Stock Reservation Entry* | Link auf die Reservierung |
+
+Filter: *Company*, *Customer*, *Sales Order*, *Item* und *Unpaid Only*. *Unpaid Only* ist standardmäßig an und blendet bezahlte Aufträge aus.
+
+Der Bericht hat nur Zeilen, wenn ERPNext eine **Stock Reservation Entry** angelegt hat. Ist `allow_reservation` aus, entsteht eine solche Reservierung erst nach Zahlung oder Lieferfreigabe. Mit *Unpaid Only* bleibt der Bericht dann meist leer, ohne den Filter zeigt er diese Reservierungen trotzdem.
+
+Der Standardbericht **Reserved Stock** hat einen Erstellzeitpunkt, aber kein Alter in Tagen, keinen Lagerbestand und keinen Filter auf unbezahlte Vorkasse-Aufträge.
