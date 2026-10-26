@@ -4,7 +4,7 @@ Beschlüsse für die App **Extended Advance Payment Process**. Stand der Umsetzu
 
 ## Welche Aufträge
 
-Ob ein **Sales Order** ein Vorkasse-Auftrag ist, entscheidet sein Zahlungsplan. Das **Check**-Feld *Counts for Advance* (`custom_counts_for_advance`) am **Payment Term** markiert Anzahlungs-Terms. Es ist ein **Custom Field** neben *Mode of Payment*, exportiert in `custom/payment_term.json`. Hat eine Zeile in `payment_schedule` einen markierten **Payment Term**, gilt das Vorkasse-Verhalten. Aufträge ohne markierte Zeile bleiben unberührt.
+Ob ein **Sales Order** ein Vorkasse-Auftrag ist, entscheidet sein Zahlungsplan. Das **Check**-Feld *Counts for Advance* (`custom_counts_for_advance`) am **Payment Term** markiert Anzahlungs-Terms. Es ist ein **Custom Field** neben *Mode of Payment*. Hat eine Zeile in `payment_schedule` einen markierten **Payment Term**, gilt das Vorkasse-Verhalten. Aufträge ohne markierte Zeile bleiben unberührt.
 
 Es gibt keine zweite Liste von Vorlagen in den Settings. Das Häkchen am **Payment Term** ist die einzige Stelle. Wer einen Anzahlungs-Term ohne Sperre will, legt einen zweiten **Payment Term** ohne Häkchen an.
 
@@ -67,7 +67,7 @@ Eine **Pick List** bucht kein Lager und erzeugt keine Lieferung. Sie darf deshal
 
 Die Rolle steht in **Extended Advance Payment Process Settings** als **Link** *Role to allow Processing of blocked Sales Orders* (`allow_processing_role`) auf **Role**. Die Felder am **Sales Order** sind **Custom Field** neben *Advance Paid*. Pro Seite ein **Check**, ein **Link** auf **User** und ein **Datetime**. Alle sechs sind *Read Only* und *Allow on Submit*. Die Freigabe schreibt der Button *Advance Payment* am gebuchten **Sales Order**. Die Methode `set_release` in `sales_order.py` prüft `allow_processing_role` und das Schreibrecht am **Sales Order**. Beides ist nötig, weil die Methode auch direkt aufrufbar ist und `db_set` keine Rechte prüft. Danach setzt oder leert Haken, User und Uhrzeit für eine Seite. Das Formular hängt in `public/js/sales_order.js`, eingebunden über `doctype_js` in `hooks.py`.
 
-Exportiert sind sie über **Customize Form**, Aktion *Export Customizations*, Modul **Extended Advance Payment Process**, *Sync on Migrate* an. Die Datei ist `extended_advance_payment_process/custom/sales_order.json`. Beim `bench migrate` legt Frappe die Felder daraus an.
+Alle Custom Fields der App stehen in `setup.py`, Funktion `get_custom_fields`. `make_custom_fields` läuft über `after_install` und `after_migrate` und legt mit `create_custom_fields` nur diese Felder an oder aktualisiert sie. Custom Fields anderer Apps und Property Setter bleiben unberührt. `before_uninstall` entfernt nur die eigenen Felder. Änderungen an diesen Feldern gehören in `setup.py`, nicht in **Customize Form**, weil das nächste `bench migrate` sie sonst zurücksetzt. Die Freigabe-Felder haben *No Copy*, damit ein kopierter oder berichtigter Auftrag ohne Freigabe startet.
 
 - `custom_order_released`, `custom_order_released_by`, `custom_order_released_on`
 - `custom_delivery_released`, `custom_delivery_released_by`, `custom_delivery_released_on`

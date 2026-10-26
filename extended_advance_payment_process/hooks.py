@@ -88,12 +88,13 @@ doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # ------------
 
 # before_install = "extended_advance_payment_process.install.before_install"
-# after_install = "extended_advance_payment_process.install.after_install"
+after_install = "extended_advance_payment_process.setup.after_install"
+after_migrate = "extended_advance_payment_process.setup.after_migrate"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "extended_advance_payment_process.uninstall.before_uninstall"
+before_uninstall = "extended_advance_payment_process.setup.before_uninstall"
 # after_uninstall = "extended_advance_payment_process.uninstall.after_uninstall"
 
 # Integration Setup
