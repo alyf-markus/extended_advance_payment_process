@@ -1,8 +1,12 @@
 ### Extended Advance Payment Process
 
-Vorkasse: Lieferung und Beschaffung bleiben gesperrt, bis die Anzahlung da ist.
+**Deutsch:** Vorkasse: Lieferung und Beschaffung bleiben gesperrt, bis die Anzahlung da ist.
 
-Beschlüsse und weiterer Ausbau: [docs/vorkasse.md](docs/vorkasse.md). English: [docs/advance_payment.md](docs/advance_payment.md).
+Beschlüsse und weiterer Ausbau: [docs/vorkasse.md](docs/vorkasse.md).
+
+**English:** Advance payment: delivery and procurement stay blocked until the advance payment has been received.
+
+Decisions and further development: [docs/advance_payment.md](docs/advance_payment.md).
 
 ### Installation
 
